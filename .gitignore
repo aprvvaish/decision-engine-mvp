@@ -1,0 +1,8 @@
+# .gitignore file
+.env
+.csv
+.db
+.log
+.tmp
+.cache
+.DS_Store

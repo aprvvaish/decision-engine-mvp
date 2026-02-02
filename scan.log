@@ -1,0 +1,11 @@
+2026-02-02 14:32:54,216 | INFO | Fetching NIFTY 50 from NSE
+2026-02-02 14:33:16,036 | WARNING | NSE fetch failed, using fallback list | [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond
+2026-02-02 14:33:16,036 | INFO | Starting scan | 47 stocks | 5 batches
+2026-02-02 14:33:16,037 | INFO | Scanning batch 1/5
+2026-02-02 14:33:18,922 | INFO | Scanning batch 2/5
+2026-02-02 14:33:20,580 | INFO | Scanning batch 3/5
+2026-02-02 14:33:24,795 | INFO | Scanning batch 4/5
+2026-02-02 14:33:29,113 | ERROR | HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: TATAMOTORS.NS"}}}
+2026-02-02 14:33:30,611 | ERROR | $TATAMOTORS.NS: possibly delisted; no price data found  (period=3y) (Yahoo error = "No data found, symbol may be delisted")
+2026-02-02 14:33:30,612 | ERROR | Failed: TATAMOTORS.NS | Insufficient data
+2026-02-02 14:33:30,613 | INFO | Scanning batch 5/5
