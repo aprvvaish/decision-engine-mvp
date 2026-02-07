@@ -2,7 +2,7 @@
 
 **Professional portfolio optimization for Indian equities. Zero cost. Zero complexity.**
 
-> Achieve ₹1 Cr from ₹20 Lakhs with data-driven strategies.
+> Achieve financial goals with data-driven strategies.
 
 [![Python](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
 [![Streamlit](https://img.shields.io/badge/streamlit-1.28+-red.svg)](https://streamlit.io/)
@@ -117,7 +117,7 @@ streamlit run dashboard.py
 
 ---
 
-## 💡 Example: ₹20L → ₹1Cr
+## 💡 Example:
 
 **Goal:** Grow ₹20 lakhs to ₹1 crore in 10 years
 
@@ -244,11 +244,11 @@ MIT License - See [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🌟 Star History
+<!-- ## 🌟 Star History
 
 If this helped you, consider starring the repo! ⭐
 
-[![Star History Chart](https://api.star-history.com/svg?repos=aprvvaish/decision-engine-mvp&type=Date)](https://star-history.com/#aprvvaish/decision-engine-mvp&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=aprvvaish/decision-engine-mvp&type=Date)](https://star-history.com/#aprvvaish/decision-engine-mvp&Date) -->
 
 ---
 
@@ -256,7 +256,7 @@ If this helped you, consider starring the repo! ⭐
 
 **Version 2.0 Roadmap:**
 - [ ] Real-time WebSocket price updates
-- [ ] WhatsApp/Telegram alerts
+- [ ] WhatsApp/Email alerts
 - [ ] PDF report generation
 - [ ] Custom indicator builder
 - [ ] Sector rotation strategies

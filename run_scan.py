@@ -38,7 +38,7 @@ STOCK_UNIVERSE = [
 
 # Scanner configuration
 LOOKBACK_DAYS = 365  # 1 year of historical data
-FETCH_TIMEOUT = 5   # Timeout in seconds for each stock (increase if network is slow)
+FETCH_TIMEOUT = 3   # Timeout in seconds for each stock (increase if network is slow)
 DB_PATH = "scan_results.db"
 
 def fetch_stock_data(ticker, days=LOOKBACK_DAYS):
