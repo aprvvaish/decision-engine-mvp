@@ -313,11 +313,17 @@ def calculate_portfolio_performance(portfolio_name: str,
     
     allocations = portfolio['allocations']
     initial_capital = portfolio['initial_capital']
+    created_at = portfolio.get('created_at', '')
+    
+    # Extract date from created_at (format: "2026-02-08 14:30:00")
+    creation_date = created_at.split(' ')[0] if created_at else None
     
     # Calculate current value for each position
     current_value = 0
     invested_value = 0
     positions_detail = []
+    
+    conn = sqlite3.connect(db_path)
     
     for ticker, weight in allocations.items():
         if weight > 0:
@@ -327,18 +333,17 @@ def calculate_portfolio_performance(portfolio_name: str,
             if ticker in current_prices:
                 current_price = current_prices[ticker]
                 
-                # Get historical price from database to calculate actual gain
-                conn = sqlite3.connect(db_path)
-                query = f"""
-                SELECT close_price, date 
-                FROM scan_results 
-                WHERE ticker = '{ticker}' 
-                AND date = (SELECT created_at FROM portfolios WHERE name = '{portfolio_name}')
-                LIMIT 1
-                """
-                df = pd.read_sql_query(query, conn)
-                
-                if df.empty:
+                # Get price at portfolio creation date (or closest date before)
+                if creation_date:
+                    query = f"""
+                    SELECT close_price, date 
+                    FROM scan_results 
+                    WHERE ticker = '{ticker}' 
+                    AND date <= '{creation_date}'
+                    ORDER BY date DESC
+                    LIMIT 1
+                    """
+                else:
                     # Fallback: use earliest available price
                     query = f"""
                     SELECT close_price, date 
@@ -347,38 +352,61 @@ def calculate_portfolio_performance(portfolio_name: str,
                     ORDER BY date ASC 
                     LIMIT 1
                     """
-                    df = pd.read_sql_query(query, conn)
                 
-                conn.close()
+                df = pd.read_sql_query(query, conn)
                 
                 if not df.empty:
                     purchase_price = df.iloc[0]['close_price']
+                    purchase_date = df.iloc[0]['date']
+                    
+                    # Calculate shares bought at creation
                     shares = allocation_amount / purchase_price
+                    
+                    # Calculate current value
                     position_current_value = shares * current_price
+                    
+                    # Calculate gain/loss
                     position_gain = position_current_value - allocation_amount
-                    position_gain_pct = (position_gain / allocation_amount * 100)
+                    position_gain_pct = (position_gain / allocation_amount * 100) if allocation_amount > 0 else 0
+                    
+                    positions_detail.append({
+                        'ticker': ticker,
+                        'weight': weight,
+                        'invested': allocation_amount,
+                        'purchase_price': purchase_price,
+                        'purchase_date': purchase_date,
+                        'shares': shares,
+                        'current_price': current_price,
+                        'current_value': position_current_value,
+                        'gain_loss': position_gain,
+                        'gain_loss_pct': position_gain_pct
+                    })
+                    
+                    current_value += position_current_value
                 else:
-                    # No historical data, assume no change
-                    position_current_value = allocation_amount
-                    position_gain = 0
-                    position_gain_pct = 0
-                
-                current_value += position_current_value
-                
-                positions_detail.append({
-                    'ticker': ticker,
-                    'weight': weight,
-                    'invested': allocation_amount,
-                    'current_value': position_current_value,
-                    'current_price': current_price,
-                    'gain_loss': position_gain,
-                    'gain_loss_pct': position_gain_pct
-                })
+                    # No historical data - assume no change
+                    positions_detail.append({
+                        'ticker': ticker,
+                        'weight': weight,
+                        'invested': allocation_amount,
+                        'purchase_price': current_price,
+                        'purchase_date': 'N/A',
+                        'shares': allocation_amount / current_price if current_price > 0 else 0,
+                        'current_price': current_price,
+                        'current_value': allocation_amount,
+                        'gain_loss': 0,
+                        'gain_loss_pct': 0
+                    })
+                    
+                    current_value += allocation_amount
+    
+    conn.close()
     
     # Calculate portfolio totals
     total_gain = current_value - invested_value
     total_gain_pct = (total_gain / invested_value * 100) if invested_value > 0 else 0
     
+    # Cash component (unallocated capital)
     cash = initial_capital - invested_value
     total_portfolio_value = current_value + cash
     
@@ -392,5 +420,6 @@ def calculate_portfolio_performance(portfolio_name: str,
         'total_gain': total_gain,
         'total_gain_pct': total_gain_pct,
         'positions': positions_detail,
-        'created_at': portfolio.get('created_at', 'N/A')
+        'created_at': created_at,
+        'creation_date': creation_date
     }
