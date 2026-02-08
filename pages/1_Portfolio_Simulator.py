@@ -364,26 +364,89 @@ with tab2:
     if portfolios_df.empty:
         st.info("📭 No saved portfolios yet. Create one in the 'Create Portfolio' tab!")
     else:
+        # Get current prices for value calculation
+        from portfolio_manager import calculate_portfolio_performance
+        
+        # Enhanced portfolio list with current values
+        enhanced_portfolios = []
+        
+        for _, row in portfolios_df.iterrows():
+            portfolio_name = row['name']
+            performance = calculate_portfolio_performance(portfolio_name, latest_prices)
+            
+            if performance:
+                enhanced_portfolios.append({
+                    'Name': portfolio_name,
+                    'Initial Capital': row['initial_capital'],
+                    'Current Value': performance['total_value'],
+                    'Gain/Loss': performance['total_gain'],
+                    'Gain %': performance['total_gain_pct'],
+                    'Strategy': row['strategy'],
+                    'Created': row['created_at'],
+                    'Updated': row['updated_at']
+                })
+            else:
+                enhanced_portfolios.append({
+                    'Name': portfolio_name,
+                    'Initial Capital': row['initial_capital'],
+                    'Current Value': row['initial_capital'],
+                    'Gain/Loss': 0,
+                    'Gain %': 0,
+                    'Strategy': row['strategy'],
+                    'Created': row['created_at'],
+                    'Updated': row['updated_at']
+                })
+        
+        enhanced_df = pd.DataFrame(enhanced_portfolios)
+        
         st.dataframe(
-            portfolios_df,
+            enhanced_df,
             column_config={
-                "name": "Name",
-                "description": "Description",
-                "initial_capital": st.column_config.NumberColumn(
+                "Name": "Portfolio Name",
+                "Initial Capital": st.column_config.NumberColumn(
                     "Initial Capital",
                     format="₹%.0f"
                 ),
-                "target_capital": st.column_config.NumberColumn(
-                    "Target Capital",
+                "Current Value": st.column_config.NumberColumn(
+                    "Current Value",
                     format="₹%.0f"
                 ),
-                "strategy": "Strategy",
-                "created_at": "Created",
-                "updated_at": "Last Updated"
+                "Gain/Loss": st.column_config.NumberColumn(
+                    "Gain/Loss",
+                    format="₹%.0f"
+                ),
+                "Gain %": st.column_config.NumberColumn(
+                    "Gain %",
+                    format="%.2f%%"
+                ),
+                "Strategy": "Strategy",
+                "Created": "Created",
+                "Updated": "Last Updated"
             },
             hide_index=True,
             use_container_width=True
         )
+        
+        # Summary metrics
+        st.divider()
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            total_invested = sum([p['Initial Capital'] for p in enhanced_portfolios])
+            st.metric("Total Invested", f"₹{total_invested:,.0f}")
+        
+        with col2:
+            total_current = sum([p['Current Value'] for p in enhanced_portfolios])
+            st.metric("Total Current Value", f"₹{total_current:,.0f}")
+        
+        with col3:
+            total_gain = total_current - total_invested
+            st.metric("Total Gain/Loss", f"₹{total_gain:,.0f}", 
+                     delta=f"{(total_gain/total_invested*100):.2f}%" if total_invested > 0 else "0%")
+        
+        with col4:
+            st.metric("Number of Portfolios", len(enhanced_portfolios))
         
         st.divider()
         
@@ -397,6 +460,7 @@ with tab2:
         
         if selected_portfolio:
             portfolio = pm.load_portfolio(selected_portfolio)
+            performance = calculate_portfolio_performance(selected_portfolio, latest_prices)
             
             if portfolio:
                 col1, col2 = st.columns([2, 1])
@@ -408,46 +472,107 @@ with tab2:
                     st.markdown(f"**Last Updated:** {portfolio['updated_at']}")
                 
                 with col2:
-                    st.metric("Initial Capital", f"₹{portfolio['initial_capital']:,.0f}")
-                    if portfolio['target_capital']:
-                        st.metric("Target Capital", f"₹{portfolio['target_capital']:,.0f}")
+                    if performance:
+                        st.metric("Initial Capital", f"₹{performance['initial_capital']:,.0f}")
+                        st.metric("Current Value", f"₹{performance['total_value']:,.0f}",
+                                 delta=f"{performance['total_gain_pct']:+.2f}%")
+                        
+                        # Color-coded gain/loss
+                        if performance['total_gain'] >= 0:
+                            st.success(f"💰 Gain: ₹{performance['total_gain']:,.0f}")
+                        else:
+                            st.error(f"📉 Loss: ₹{abs(performance['total_gain']):,.0f}")
+                    else:
+                        st.metric("Initial Capital", f"₹{portfolio['initial_capital']:,.0f}")
+                        if portfolio['target_capital']:
+                            st.metric("Target Capital", f"₹{portfolio['target_capital']:,.0f}")
                 
                 st.divider()
                 
-                # Show allocations
+                # Show allocations with current values
                 allocations = portfolio['allocations']
                 
-                allocation_display = pd.DataFrame([
-                    {
-                        'Stock': stock,
-                        'Weight': weight * 100,  # Convert to percentage for display
-                        'Capital': weight * portfolio['initial_capital'],
-                        'Current Price': latest_prices.get(stock, 0)
-                    }
-                    for stock, weight in allocations.items()
-                    if weight > 0
-                ]).sort_values('Weight', ascending=False)
-                
-                st.dataframe(
-                    allocation_display,
-                    column_config={
-                        "Stock": "Stock",
-                        "Weight": st.column_config.NumberColumn(
-                            "Weight (%)",
-                            format="%.2f"
-                        ),
-                        "Capital": st.column_config.NumberColumn(
-                            "Allocation",
-                            format="₹%.0f"
-                        ),
-                        "Current Price": st.column_config.NumberColumn(
-                            "Price",
-                            format="₹%.2f"
-                        )
-                    },
-                    hide_index=True,
-                    use_container_width=True
-                )
+                if performance and performance['positions']:
+                    # Enhanced allocation display with real-time values
+                    allocation_display = pd.DataFrame(performance['positions'])
+                    
+                    allocation_display = allocation_display.rename(columns={
+                        'ticker': 'Stock',
+                        'weight': 'Weight',
+                        'invested': 'Invested',
+                        'current_value': 'Current Value',
+                        'current_price': 'Current Price',
+                        'gain_loss': 'Gain/Loss',
+                        'gain_loss_pct': 'Gain %'
+                    })
+                    
+                    allocation_display['Weight'] = allocation_display['Weight'] * 100
+                    
+                    st.dataframe(
+                        allocation_display,
+                        column_config={
+                            "Stock": "Stock",
+                            "Weight": st.column_config.NumberColumn(
+                                "Weight (%)",
+                                format="%.2f"
+                            ),
+                            "Invested": st.column_config.NumberColumn(
+                                "Invested",
+                                format="₹%.0f"
+                            ),
+                            "Current Value": st.column_config.NumberColumn(
+                                "Current Value",
+                                format="₹%.0f"
+                            ),
+                            "Current Price": st.column_config.NumberColumn(
+                                "Price",
+                                format="₹%.2f"
+                            ),
+                            "Gain/Loss": st.column_config.NumberColumn(
+                                "Gain/Loss",
+                                format="₹%.0f"
+                            ),
+                            "Gain %": st.column_config.NumberColumn(
+                                "Gain %",
+                                format="%.2f%%"
+                            )
+                        },
+                        hide_index=True,
+                        use_container_width=True
+                    )
+                else:
+                    # Fallback to simple display if no performance data
+                    allocation_display = pd.DataFrame([
+                        {
+                            'Stock': stock,
+                            'Weight': weight * 100,
+                            'Capital': weight * portfolio['initial_capital'],
+                            'Current Price': latest_prices.get(stock, 0)
+                        }
+                        for stock, weight in allocations.items()
+                        if weight > 0
+                    ]).sort_values('Weight', ascending=False)
+                    
+                    st.dataframe(
+                        allocation_display,
+                        column_config={
+                            "Stock": "Stock",
+                            "Weight": st.column_config.NumberColumn(
+                                "Weight (%)",
+                                format="%.2f"
+                            ),
+                            "Capital": st.column_config.NumberColumn(
+                                "Allocation",
+                                format="₹%.0f"
+                            ),
+                            "Current Price": st.column_config.NumberColumn(
+                                "Price",
+                                format="₹%.2f"
+                            )
+                        },
+                        hide_index=True,
+                        use_container_width=True
+                    )
                 
                 # Pie chart
                 fig = go.Figure(data=[go.Pie(

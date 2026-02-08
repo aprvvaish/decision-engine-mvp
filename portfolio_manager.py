@@ -250,27 +250,147 @@ def calculate_portfolio_value(allocations: Dict[str, float],
     Returns:
         Dictionary with portfolio value breakdown
     """
-    total_value = 0
+    total_current_value = 0
+    total_allocated = 0
     positions = {}
     
     for ticker, weight in allocations.items():
-        if weight > 0 and ticker in current_prices:
+        if weight > 0:
             allocation_amount = capital * weight
-            current_price = current_prices[ticker]
+            total_allocated += allocation_amount
             
-            # For simplicity, assume we know original price and shares
-            # In real system, would track purchase price and shares
-            positions[ticker] = {
-                'weight': weight,
-                'allocated': allocation_amount,
-                'current_value': allocation_amount,  # Placeholder
-                'gain_loss': 0  # Placeholder
-            }
-            
-            total_value += allocation_amount
+            if ticker in current_prices:
+                current_price = current_prices[ticker]
+                # Assuming shares bought at initial allocation
+                # In real system, would track purchase price
+                current_value = allocation_amount  # Simplified
+                
+                positions[ticker] = {
+                    'weight': weight,
+                    'allocated': allocation_amount,
+                    'current_value': current_value,
+                    'current_price': current_price
+                }
+                
+                total_current_value += current_value
+    
+    cash = capital - total_allocated
+    total_value = total_current_value + cash
+    
+    gain_loss = total_current_value - total_allocated
+    gain_loss_pct = (gain_loss / total_allocated * 100) if total_allocated > 0 else 0
     
     return {
         'total_value': total_value,
-        'positions': positions,
-        'cash': capital - total_value
+        'invested_value': total_allocated,
+        'current_value': total_current_value,
+        'cash': cash,
+        'gain_loss': gain_loss,
+        'gain_loss_pct': gain_loss_pct,
+        'positions': positions
+    }
+
+
+def calculate_portfolio_performance(portfolio_name: str, 
+                                   current_prices: Dict[str, float],
+                                   db_path: str = DB_PATH) -> Dict:
+    """
+    Calculate real-time performance of a saved portfolio
+    
+    Args:
+        portfolio_name: Name of the portfolio
+        current_prices: Dict of current stock prices
+        db_path: Database path
+    
+    Returns:
+        Dict with performance metrics
+    """
+    pm = PortfolioManager(db_path)
+    portfolio = pm.load_portfolio(portfolio_name)
+    
+    if not portfolio:
+        return None
+    
+    allocations = portfolio['allocations']
+    initial_capital = portfolio['initial_capital']
+    
+    # Calculate current value for each position
+    current_value = 0
+    invested_value = 0
+    positions_detail = []
+    
+    for ticker, weight in allocations.items():
+        if weight > 0:
+            allocation_amount = initial_capital * weight
+            invested_value += allocation_amount
+            
+            if ticker in current_prices:
+                current_price = current_prices[ticker]
+                
+                # Get historical price from database to calculate actual gain
+                conn = sqlite3.connect(db_path)
+                query = f"""
+                SELECT close_price, date 
+                FROM scan_results 
+                WHERE ticker = '{ticker}' 
+                AND date = (SELECT created_at FROM portfolios WHERE name = '{portfolio_name}')
+                LIMIT 1
+                """
+                df = pd.read_sql_query(query, conn)
+                
+                if df.empty:
+                    # Fallback: use earliest available price
+                    query = f"""
+                    SELECT close_price, date 
+                    FROM scan_results 
+                    WHERE ticker = '{ticker}' 
+                    ORDER BY date ASC 
+                    LIMIT 1
+                    """
+                    df = pd.read_sql_query(query, conn)
+                
+                conn.close()
+                
+                if not df.empty:
+                    purchase_price = df.iloc[0]['close_price']
+                    shares = allocation_amount / purchase_price
+                    position_current_value = shares * current_price
+                    position_gain = position_current_value - allocation_amount
+                    position_gain_pct = (position_gain / allocation_amount * 100)
+                else:
+                    # No historical data, assume no change
+                    position_current_value = allocation_amount
+                    position_gain = 0
+                    position_gain_pct = 0
+                
+                current_value += position_current_value
+                
+                positions_detail.append({
+                    'ticker': ticker,
+                    'weight': weight,
+                    'invested': allocation_amount,
+                    'current_value': position_current_value,
+                    'current_price': current_price,
+                    'gain_loss': position_gain,
+                    'gain_loss_pct': position_gain_pct
+                })
+    
+    # Calculate portfolio totals
+    total_gain = current_value - invested_value
+    total_gain_pct = (total_gain / invested_value * 100) if invested_value > 0 else 0
+    
+    cash = initial_capital - invested_value
+    total_portfolio_value = current_value + cash
+    
+    return {
+        'portfolio_name': portfolio_name,
+        'initial_capital': initial_capital,
+        'invested_value': invested_value,
+        'current_value': current_value,
+        'cash': cash,
+        'total_value': total_portfolio_value,
+        'total_gain': total_gain,
+        'total_gain_pct': total_gain_pct,
+        'positions': positions_detail,
+        'created_at': portfolio.get('created_at', 'N/A')
     }

@@ -13,32 +13,100 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # Indian stock universe (NSE-listed)
+# Nifty 50 + Next 50 + Sector Leaders = 100+ stocks
+
 STOCK_UNIVERSE = [
-    # Large Cap - IT
-    'TCS.NS', 'INFY.NS', 'HCLTECH.NS', 'WIPRO.NS', 'TECHM.NS',
+    # === NIFTY 50 - IT ===
+    'TCS.NS', 'INFY.NS', 'HCLTECH.NS', 'WIPRO.NS', 'TECHM.NS', 'LTI.NS',
     
-    # Large Cap - Banking/Finance
+    # === NIFTY 50 - Banking & Finance ===
     'HDFCBANK.NS', 'ICICIBANK.NS', 'SBIN.NS', 'KOTAKBANK.NS', 'AXISBANK.NS',
+    'INDUSINDBK.NS', 'BAJFINANCE.NS', 'BAJAJFINSV.NS', 'HDFCLIFE.NS', 'SBILIFE.NS',
     
-    # Large Cap - Energy/Oil
-    'RELIANCE.NS', 'ONGC.NS', 'BPCL.NS', 'IOC.NS',
+    # === NIFTY 50 - Energy & Oil ===
+    'RELIANCE.NS', 'ONGC.NS', 'BPCL.NS', 'IOC.NS', 'NTPC.NS', 'POWERGRID.NS',
+    'COALINDIA.NS', 'ADANIGREEN.NS', 'ADANIPORTS.NS', 'ADANITRANS.NS',
     
-    # Large Cap - Automotive
-    'MARUTI.NS', 'TATAMOTORS.NS', 'M&M.NS', 'BAJAJ-AUTO.NS',
+    # === NIFTY 50 - Automotive ===
+    'MARUTI.NS', 'TATAMOTORS.NS', 'M&M.NS', 'BAJAJ-AUTO.NS', 'EICHERMOT.NS',
+    'HEROMOTOCO.NS', 'TVSMOTOR.NS', 'ASHOKLEY.NS',
     
-    # Large Cap - FMCG/Consumer
-    'HINDUNILVR.NS', 'ITC.NS', 'NESTLEIND.NS', 'BRITANNIA.NS',
+    # === NIFTY 50 - FMCG & Consumer ===
+    'HINDUNILVR.NS', 'ITC.NS', 'NESTLEIND.NS', 'BRITANNIA.NS', 'DABUR.NS',
+    'GODREJCP.NS', 'MARICO.NS', 'TATACONSUM.NS', 'COLPAL.NS',
     
-    # Large Cap - Pharma
-    'SUNPHARMA.NS', 'DRREDDY.NS', 'CIPLA.NS', 'DIVISLAB.NS',
+    # === NIFTY 50 - Pharma & Healthcare ===
+    'SUNPHARMA.NS', 'DRREDDY.NS', 'CIPLA.NS', 'DIVISLAB.NS', 'APOLLOHOSP.NS',
+    'BIOCON.NS', 'AUROPHARMA.NS', 'TORNTPHARM.NS', 'LUPIN.NS',
     
-    # Mid Cap
-    'ADANIENT.NS', 'LT.NS', 'TITAN.NS', 'BAJFINANCE.NS', 'ASIANPAINT.NS'
+    # === NIFTY 50 - Metals & Mining ===
+    'TATASTEEL.NS', 'HINDALCO.NS', 'JSWSTEEL.NS', 'VEDL.NS', 'HINDZINC.NS',
+    'NMDC.NS', 'SAIL.NS',
+    
+    # === NIFTY 50 - Cement & Construction ===
+    'ULTRACEMCO.NS', 'GRASIM.NS', 'LT.NS', 'ADANIENT.NS', 'SHREECEM.NS',
+    'AMBUJACEM.NS', 'ACC.NS',
+    
+    # === NIFTY 50 - Telecom ===
+    'BHARTIARTL.NS', 'IDEA.NS',
+    
+    # === NIFTY 50 - Others ===
+    'ASIANPAINT.NS', 'TITAN.NS', 'PIDILITIND.NS', 'BERGEPAINT.NS',
+    
+    # === NIFTY NEXT 50 - High Growth ===
+    'ZOMATO.NS', 'PAYTM.NS', 'NYKAA.NS', 'POLICYBZR.NS',
+    'DMART.NS', 'JUBLFOOD.NS', 'PVR.NS', 'INDIGO.NS',
+    
+    # === NIFTY NEXT 50 - Mid Cap Leaders ===
+    'HAVELLS.NS', 'VOLTAS.NS', 'CUMMINSIND.NS', 'BOSCHLTD.NS',
+    'SIEMENS.NS', 'ABB.NS', 'MOTHERSON.NS',
+    
+    # === NIFTY NEXT 50 - PSU ===
+    'BEL.NS', 'HAL.NS', 'RECLTD.NS', 'PFC.NS', 'IRCTC.NS',
+    
+    # === Small Cap - Emerging Leaders ===
+    'IRFC.NS', 'RVNL.NS', 'SJVN.NS', 'NHPC.NS',
+    'CONCOR.NS', 'GAIL.NS', 'OIL.NS',
+    
+    # === Sectoral Leaders ===
+    # Chemicals
+    'PIDILITIND.NS', 'SRF.NS', 'AARTI.NS',
+    # Textiles
+    'RAYMOND.NS', 'ADITYA-B.NS',
+    # Hospitality
+    'INDHOTEL.NS', 'LEMONTREE.NS',
+    # Real Estate
+    'DLF.NS', 'GODREJPROP.NS', 'OBEROIRLTY.NS'
 ]
+
+# Quick preset lists for different scanning needs
+NIFTY_50_ONLY = [
+    'RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'INFY.NS', 'ICICIBANK.NS',
+    'HINDUNILVR.NS', 'ITC.NS', 'SBIN.NS', 'BHARTIARTL.NS', 'BAJFINANCE.NS',
+    'KOTAKBANK.NS', 'LT.NS', 'ASIANPAINT.NS', 'AXISBANK.NS', 'MARUTI.NS',
+    'SUNPHARMA.NS', 'TITAN.NS', 'ULTRACEMCO.NS', 'NESTLEIND.NS', 'HCLTECH.NS',
+    'BAJAJFINSV.NS', 'WIPRO.NS', 'ADANIENT.NS', 'TATAMOTORS.NS', 'NTPC.NS',
+    'INDUSINDBK.NS', 'POWERGRID.NS', 'TATASTEEL.NS', 'TECHM.NS', 'M&M.NS',
+    'ONGC.NS', 'COALINDIA.NS', 'HINDALCO.NS', 'DIVISLAB.NS', 'DRREDDY.NS',
+    'BRITANNIA.NS', 'CIPLA.NS', 'EICHERMOT.NS', 'BPCL.NS', 'GRASIM.NS',
+    'JSWSTEEL.NS', 'APOLLOHOSP.NS', 'HEROMOTOCO.NS', 'SBILIFE.NS', 'BAJAJ-AUTO.NS',
+    'HDFCLIFE.NS', 'ADANIPORTS.NS', 'SHREECEM.NS', 'TATACONSUM.NS', 'IOC.NS'
+]
+
+QUICK_SCAN_20 = [
+    'RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'INFY.NS', 'ICICIBANK.NS',
+    'HINDUNILVR.NS', 'ITC.NS', 'SBIN.NS', 'BAJFINANCE.NS', 'KOTAKBANK.NS',
+    'LT.NS', 'ASIANPAINT.NS', 'AXISBANK.NS', 'MARUTI.NS', 'SUNPHARMA.NS',
+    'TITAN.NS', 'ULTRACEMCO.NS', 'NESTLEIND.NS', 'HCLTECH.NS', 'WIPRO.NS'
+]
+
+# Default to full universe (can comment out for faster scans)
+# STOCK_UNIVERSE = NIFTY_50_ONLY  # Use this for Nifty 50 only
+# STOCK_UNIVERSE = QUICK_SCAN_20   # Use this for quick testing
 
 # Scanner configuration
 LOOKBACK_DAYS = 365  # 1 year of historical data
-FETCH_TIMEOUT = 3   # Timeout in seconds for each stock (increase if network is slow)
+FETCH_TIMEOUT = 10   # Timeout in seconds for each stock (increase if network is slow)
 DB_PATH = "scan_results.db"
 
 def fetch_stock_data(ticker, days=LOOKBACK_DAYS):
