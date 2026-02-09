@@ -84,7 +84,29 @@ st.markdown("""
 
 # Header
 st.markdown('<h1 class="main-header">📊 Stock Research Platform</h1>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">AI-Powered Portfolio Optimization for Indian Equities</p>', unsafe_allow_html=True)
+
+# Top controls
+header_col1, header_col2, header_col3 = st.columns([3, 1, 1])
+
+with header_col1:
+    st.markdown('<p class="subtitle">AI-Powered Portfolio Optimization for Indian Equities</p>', unsafe_allow_html=True)
+
+with header_col2:
+    if st.button("🔄 Refresh Dashboard", help="Reload data from database", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
+
+with header_col3:
+    if st.button("📥 Update Prices", help="Run scanner to get latest prices", use_container_width=True, type="primary"):
+        st.info("""
+        **To update stock prices:**
+        
+        ```bash
+        python run_scan.py
+        ```
+        
+        Then refresh this page!
+        """)
 
 # Check if database exists
 @st.cache_data(ttl=60)
@@ -183,19 +205,48 @@ with col2:
     
     if days_ago == 0:
         update_status = "🟢 Today"
+        status_color = "success"
     elif days_ago == 1:
         update_status = "🟡 Yesterday"
+        status_color = "warning"
     elif days_ago <= 7:
         update_status = f"🟡 {days_ago}d ago"
+        status_color = "warning"
     else:
         update_status = f"🔴 {days_ago}d ago"
+        status_color = "error"
     
-    st.info(f"Last scan: {update_status}")
+    if status_color == "success":
+        st.success(f"Last scan: {update_status}")
+    elif status_color == "warning":
+        st.warning(f"Last scan: {update_status}")
+    else:
+        st.error(f"Last scan: {update_status}")
+        
 with col3:
     if db_status['num_portfolios'] > 0:
         st.info(f"💼 {db_status['num_portfolios']} portfolios")
     else:
         st.warning("💼 No portfolios")
+
+# Warning if data is old
+if days_ago >= 1:
+    st.warning(f"""
+    ⚠️ **Stock prices are {days_ago} day(s) old!**
+    
+    Portfolio gain/loss calculations use data from **{db_status['last_update']}**.
+    
+    **To get today's prices:**
+    1. Open terminal
+    2. Run: `python run_scan.py`
+    3. Wait 5-15 minutes (scans 100+ stocks)
+    4. Click "🔄 Refresh Dashboard" button above
+    
+    **Or use Quick Scan (20 stocks, 2 minutes):**
+    - Edit `run_scan.py`
+    - Change line to: `STOCK_UNIVERSE = QUICK_SCAN_20`
+    - Run: `python run_scan.py`
+    """)
 
 st.divider()
 
